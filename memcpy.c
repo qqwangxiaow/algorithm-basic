@@ -13,7 +13,7 @@ void *memcpy(void *dest,const void *src,size_t count)
     if(((long)d|(long)s)&lmask)
     {
         // src and/or dest do not align on word boundary
-        if((((long)d^(long)s)&lmask)||(count<lsize))
+        if((((long)d^(long)s)&lmask)||(count<lsize)) //第一个证明 两个指针对边界的差值不一样 所以只能一个个复制 
         {
             len=count;// copy the rest of the buffer with the byte mover
         }
