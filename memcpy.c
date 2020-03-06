@@ -1,7 +1,7 @@
 //考虑内存对齐 并且一个字一个字的复制提高效率 
 //android内核版本
-typedef long word
-#define lsize word
+typedef long word;
+#define lsize sizeof(word)
 #define lmask (lsize-1)
 void *memcpy(void *dest,const void *src,size_t count)
 {
