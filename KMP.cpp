@@ -1,10 +1,10 @@
 int KMP(string s,string p)
 {
     int i=0,j=0;
-    vector<int>next=getNext(p);
-    while(i<s.size()&&j<(int)p.size()) //j可能为-1 
+    vector<int>next=getnext(p);
+    while (i<s.size()&&j<(int)p.size())
     {
-        if(j=-1||s[i]==p[j])
+        if(j==-1||s[i]==p[j])
         {
             i++;
             j++;
@@ -13,7 +13,6 @@ int KMP(string s,string p)
         {
             j=next[j];
         }
-        
     }
     if(j==p.size())
     {
@@ -23,9 +22,30 @@ int KMP(string s,string p)
     {
         return -1;
     }
-    
 }
-vector<int>getNext(string p)
+vector<int>getnext(string p)
+{
+    int i=0,j=-1;
+    vector<int>next(p.size(),0);
+    next[0]=-1;
+    while (i<p.size())
+    {
+        if(j==-1||p[i]==p[j])
+        {
+            i++;
+            j++;
+            next[i]=j;
+        }
+        else
+        {
+            j=next[j];
+        }
+        
+    }
+    return next;
+
+}
+vector<int>getnextnext(string p)
 {
     vector<int>next(p.size());
     next[0]=-1;
@@ -47,7 +67,7 @@ vector<int>getNext(string p)
         {
             j=next[j];
         }
-        
+
     }
     return next;
 
