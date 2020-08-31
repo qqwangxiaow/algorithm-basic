@@ -28,7 +28,7 @@ vector<int>getnext(string p)
     int i=0,j=-1;
     vector<int>next(p.size(),0);
     next[0]=-1;
-    while (i<p.size())
+    while (i<(int)p.size()-1)
     {
         if(j==-1||p[i]==p[j])
         {
