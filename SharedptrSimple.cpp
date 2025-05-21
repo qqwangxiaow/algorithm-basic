@@ -39,7 +39,7 @@ public:
             this->_data = other._data;
             this->_ref_count = other._ref_count;
             if (_ref_count) {
-                ++(*_ref_count);
+                _ref_count.fetch_add(1);
             }
         }
         return *this;
