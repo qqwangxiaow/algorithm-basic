@@ -14,8 +14,8 @@ public:
     LRUCache(const LRUCache& other) = delete;
     LRUCache& operator=(const LRUCache& other) = delete;
 
-    LRUCache(LRUCache&& other) = default;
-    LRUCache& operator=(LRUCache&& other) = default;
+    LRUCache(LRUCache&& other) noexcept = default;
+    LRUCache& operator=(LRUCache&& other) noexcept = default;
     /*
     LRUCache(LRUCache&& other) noexcept : 
             _capacity(other.capacity) {

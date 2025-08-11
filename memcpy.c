@@ -10,7 +10,7 @@ void *memcpy(void *dest,const void *src,size_t count)
     int len;
     if(count==0||dest==src)
         return dest;
-    if(((long)d|(long)s)&lmask)
+    if(((long)d|(long)s)&lmask) //有一个指针不对齐
     {
         // src and/or dest do not align on word boundary
         if((((long)d^(long)s)&lmask)||(count<lsize)) //第一个证明 两个指针对边界的差值不一样 所以只能一个个复制 

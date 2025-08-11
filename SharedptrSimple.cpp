@@ -13,7 +13,7 @@ public:
 
     SharedPtr(const SharedPtr& other) : _data(other._data), _ref_count(other._ref_count) {
         if(_ref_count) {
-            ++(*_ref_count);
+            _ref_count.fetch_add(1);
         };
     }
 
