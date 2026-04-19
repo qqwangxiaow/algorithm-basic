@@ -14,14 +14,13 @@ public:
     SPSCQueue& operator=(const SPSCQueue& other) = delete;
 
     bool push(const T& item) {
-        //读自己生产的地址
         const size_t current_tail = _tail.value.load(std::memory_order_relaxed);
-        const size_t next_tail = (current_tail + 1) % _capacity;
-        if (next_tail == _head.value.load(std::memory_order_acquire)) {
+        const size_t current_head = _head.value.load(std::memory_order_acquire);
+        if (current_tail - current_head == _capacity) {
             return false;
         }
-        _buffer[current_tail] = item;
-        _tail.value.store(next_tail, std::memory_order_release);
+        _buffer[current_tail % _capacity] = item;
+        _tail.value.store(current_tail + 1, std::memory_order_release);
         return true;
     }
 
@@ -31,12 +30,12 @@ public:
         }
 
         const size_t current_head = _head.value.load(std::memory_order_relaxed);
-        if (current_head == _tail.value.load(std::memory_order_acquire)) {
+        const size_t current_tail = _tail.value.load(std::memory_order_acquire);
+        if (current_head == current_tail) {
             return false;
         }
-        *item = _buffer[current_head];
-        const size_t next_head = (current_head + 1) % _capacity;
-        _head.value.store(next_head, std::memory_order_release);
+        *item = _buffer[current_head % _capacity];
+        _head.value.store(current_head + 1, std::memory_order_release);
         return true;
     }
 
@@ -47,7 +46,7 @@ public:
     size_t size() const {
         const size_t head = _head.value.load(std::memory_order_acquire);
         const size_t tail = _tail.value.load(std::memory_order_acquire);
-        return (tail + _capacity - head) % _capacity;
+        return tail - head;
     }
 
 private:
@@ -56,8 +55,8 @@ private:
     };
     AlignedIndex _tail;
     AlignedIndex _head;
-    std::array<T, Size + 1> _buffer;
-    static constexpr size_t _capacity = Size + 1;
+    std::array<T, Size> _buffer;
+    static constexpr size_t _capacity = Size;
 };
 
 int main () {

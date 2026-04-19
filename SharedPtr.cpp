@@ -1,43 +1,44 @@
 #include <atomic>
+#include <iostream>
 #include <utility>
 
-template <typename T>
-
+template<typename T> 
 class SharedPtr {
 public:
-    explicit SharedPtr(T* p = nullptr) :
-            _ptr(p),
-            _ref_count(p ? new std::atomic<int>(1) : nullptr) {
-    }
-
-    SharedPtr(T* p, std::atomic<int>* ref_count, void* control_block) :
-            _ptr(p),
-            _ref_count(ref_count),
-            _control_block(control_block) {
+    explicit SharedPtr(T* data = nullptr) : _data(data), _ref(nullptr) {
+        if (_data) {
+            try {
+                _ref = new std::atomic<int>(1);
+            } catch (...) {
+                delete _data;
+                throw;
+            }
+        }
     }
 
     ~SharedPtr() {
         release();
-    }
+    } 
 
-    SharedPtr(const SharedPtr& other) : _ptr(other._ptr), _ref_count(other._ref_count) {
-        if (_ref_count) {
-            ++(*_ref_count);
+    // 这里不需要考虑 this
+    SharedPtr(const SharedPtr& other) : _data(other._data), _ref(other._ref) {
+        if (_ref) {
+            _ref->fetch_add(1);
         }
     }
 
-    SharedPtr(SharedPtr&& other) noexcept : _ptr(other._ptr), _ref_count(other._ref_count) {
-        other._ptr = nullptr;
-        other._ref_count = nullptr;
+    SharedPtr(SharedPtr&& other) noexcept : _data(other._data), _ref(other._ref) {
+        other._data = nullptr;
+        other._ref = nullptr;
     }
 
-    SharedPtr& operator=(const SharedPtr& other) {
+    SharedPtr& operator=(const SharedPtr& other)  {
         if (this != &other) {
             release();
-            _ptr = other._ptr;
-            _ref_count = other._ref_count;
-            if (_ref_count) {
-                ++(*_ref_count);
+            _data = other._data;
+            _ref = other._ref;
+            if (_ref) {
+                _ref->fetch_add(1);
             }
         }
         return *this;
@@ -46,100 +47,75 @@ public:
     SharedPtr& operator=(SharedPtr&& other) noexcept {
         if (this != &other) {
             release();
-            _ptr = other._ptr;
-            _ref_count = other._ref_count;
-            other._ptr = nullptr;
-            other._ref_count = nullptr;
+            _data = other._data;
+            _ref = other._ref;
+            other._data = nullptr;
+            other._ref = nullptr;
         }
         return *this;
     }
 
-    T& operator*() const {
-        return *_ptr;
+    // const
+    T* operator->() const {
+        return _data;
     }
 
-    T* operator->() const {
-        return _ptr;
+    // operator*
+    T& operator*() const {
+        return *_data;
     }
 
     T* get() const {
-        return _ptr;
+        return _data;
     }
 
-    int use_count() const {
-        return _ref_count ? _ref_count->load() : 0;
+    //explicit
+    explicit operator bool() const {
+        return _data != nullptr;
     }
 
-    bool unique() const {
-        return use_count() == 1;
+    void reset(T* data = nullptr) {
+        SharedPtr temp(data);
+        swap(temp);
     }
 
-    void reset(T* p = nullptr) {
-        if (_ptr != p) {
-            release();
-            if (p) {
-                _ptr = p;
-                _ref_count = new std::atomic<int>(1);
-            }
-        }
+    int count() const {
+        return _ref ? _ref->load() : 0;
     }
 
     void swap(SharedPtr& other) noexcept {
-        std::swap(_ptr, other._ptr);
-        std::swap(_ref_count, other._ref_count);
+        std::swap(_data, other._data);
+        std::swap(_ref, other._ref);
     }
 
-    friend void swap(SharedPtr& a, SharedPtr& b) noexcept {
-        a.swap(b);
+    friend void swap(SharedPtr& lhs, SharedPtr& rhs) noexcept {
+        lhs.swap(rhs);
     }
 
-    operator bool() const {
-        return _ptr != nullptr;
-    }
-
-    template <typename U, typename... Args>
-    friend SharedPtr<U> MakeShared(Args&&... args);
 
 private:
     void release() {
-        if (_ref_count) {
-            if (--(*_ref_count) == 0) {
-                if (_control_block) {
-                    // 用make_shared方式分配的，整体delete
-                    delete static_cast<ControlBlock*>(_control_block);
-                } else {
-                    // 普通new出来的，只delete对象和计数
-                    delete _ptr;
-                    delete _ref_count;
-                }
-            }
-            _ptr = nullptr;
-            _ref_count = nullptr;
-            _control_block = nullptr;
+        if (!_ref) {
+            _data = nullptr;
+            return;
         }
+        if (_ref->fetch_sub(1) == 1) {
+            delete _data;
+            delete _ref;
+        }
+        _data = nullptr;
+        _ref = nullptr;
     }
 
-    struct ControlBlock {
-        std::atomic<int> ref_count;
-        T object;
-
-        template <typename... Args>
-        ControlBlock(Args&&... args) : ref_count(1), object(std::forward<Args>(args)...) {
-        }
-    };
-
-    T* _ptr = nullptr;
-    std::atomic<int>* _ref_count = nullptr;
-    void* _control_block = nullptr;
+    T* _data = nullptr;
+    std::atomic<int>* _ref = nullptr;
 };
 
-template <typename T, typename... Args>
-SharedPtr<T> MakeShared(Args&&... args) {
-    using ControlBlock = typename SharedPtr<T>::ControlBlock;
-    auto* block = new ControlBlock(std::forward<Args>(args)...);
-    return SharedPtr<T>(&block->object, &block->ref_count, block);
-}
+int main () {
+    auto p1 = SharedPtr<int>(new int(11));
+    auto p2 = p1;
+    std::cout << p2.count() << std::endl;
+    std::cout << *p2 << std::endl;
 
-int main() {
     return 0;
 }
