@@ -61,7 +61,7 @@ int atMostNGivenDigitSet(vector<string>& digits, int n) {
             ret += dfs(i + 1, false, false);
         }
         char up = isLimit ? s[i] : '9';
-        for (int j = 0; j <= up; ++j) {
+        for (int j = 0; j < digits.size(); ++j) {
             char d = digits[j][0];
             if (d > up) {
                 break;
