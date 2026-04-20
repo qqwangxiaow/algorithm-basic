@@ -14,13 +14,13 @@ public:
     SPSCQueue& operator=(const SPSCQueue& other) = delete;
 
     bool push(const T& item) {
-        const size_t current_tail = _tail.value.load(std::memory_order_relaxed);
-        const size_t current_head = _head.value.load(std::memory_order_acquire);
+        const size_t current_tail = _tail.load(std::memory_order_relaxed);
+        const size_t current_head = _head.load(std::memory_order_acquire);
         if (current_tail - current_head == _capacity) {
             return false;
         }
         _buffer[current_tail % _capacity] = item;
-        _tail.value.store(current_tail + 1, std::memory_order_release);
+        _tail.store(current_tail + 1, std::memory_order_release);
         return true;
     }
 
@@ -29,32 +29,29 @@ public:
             return false;
         }
 
-        const size_t current_head = _head.value.load(std::memory_order_relaxed);
-        const size_t current_tail = _tail.value.load(std::memory_order_acquire);
+        const size_t current_head = _head.load(std::memory_order_relaxed);
+        const size_t current_tail = _tail.load(std::memory_order_acquire);
         if (current_head == current_tail) {
             return false;
         }
         *item = _buffer[current_head % _capacity];
-        _head.value.store(current_head + 1, std::memory_order_release);
+        _head.store(current_head + 1, std::memory_order_release);
         return true;
     }
 
     bool empty() const {
-        return _head.value.load(std::memory_order_acquire) == _tail.value.load(std::memory_order_acquire);
+        return _head.load(std::memory_order_acquire) == _tail.load(std::memory_order_acquire);
     }
 
     size_t size() const {
-        const size_t head = _head.value.load(std::memory_order_acquire);
-        const size_t tail = _tail.value.load(std::memory_order_acquire);
+        const size_t head = _head.load(std::memory_order_acquire);
+        const size_t tail = _tail.load(std::memory_order_acquire);
         return tail - head;
     }
 
 private:
-    struct alignas(64) AlignedIndex {
-        std::atomic<size_t> value{0};
-    };
-    AlignedIndex _tail;
-    AlignedIndex _head;
+    alignas(64) std::atomic<size_t> _tail{0};
+    alignas(64) std::atomic<size_t> _head{0};
     std::array<T, Size> _buffer;
     static constexpr size_t _capacity = Size;
 };
