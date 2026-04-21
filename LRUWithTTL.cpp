@@ -40,6 +40,9 @@ public:
     }
 
     bool get(const K& key, V* value) {
+        if (!value) {
+            return false;
+        }
         std::lock_guard<std::mutex> lock(_mutex);
         auto it = _index.find(key);
         if (it == _index.end()) {
@@ -51,9 +54,7 @@ public:
             erase_item(it->second);
             return false;
         }
-        if (value) {
-            *value = it->second->_value;
-        }
+        *value = it->second->_value;
         _data.splice(_data.begin(), _data, it->second);
         return true;
     }
