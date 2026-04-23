@@ -43,6 +43,12 @@ public:
         return _head.load(std::memory_order_acquire) == _tail.load(std::memory_order_acquire);
     }
 
+    bool full() const {
+        const size_t head = _head.load(std::memory_order_acquire);
+        const size_t tail = _tail.load(std::memory_order_acquire);
+        return tail - head == _capacity;
+    }
+
     size_t size() const {
         const size_t head = _head.load(std::memory_order_acquire);
         const size_t tail = _tail.load(std::memory_order_acquire);
