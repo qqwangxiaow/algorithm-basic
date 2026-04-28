@@ -1,104 +1,41 @@
-//cpp version
-#include<iostream>
-#include<vector>
-using namespace std;
-int partition(vector<int>&arr,int l,int r)
-{
-    int pivot=arr[r];
-    int ll=l-1;
-    for(int i=l;i<r;i++)
-    {
-        if(arr[i]<=pivot)
-        {
-            ll++;
-            swap(arr[ll],arr[i]);
+#include <iostream>
+#include <vector>
+
+
+
+std::pair<int, int> partition3(std::vector<int>& nums, int l, int r) {
+    int pivot = l + rand() % (r - l + 1);
+    int p = nums[pivot];
+    std::swap(nums[pivot], nums[r]);
+    int lt = l, i = l, gt = r - 1;
+    while(i <= gt) {
+        if (nums[i] < p) {
+            std::swap(nums[i++], nums[lt++]);
+        } else if (nums[i] > p) {
+            std::swap(nums[i], nums[gt--]);
+        } else {
+            i++;
         }
     }
-    swap(arr[++ll],arr[r]); //arr[r] not pivot
-    return ll;
-}
-void quicksort(vector<int>&arr,int l,int r)
-{
-    if(l<r)  //if(l<r) not while
-    {
-        int m=partition(arr,l,r);
-        quicksort(arr,l,m-1);
-        quicksort(arr,m+1,r);
-    }
-
-}
-int main()
-{
-    vector<int>arr{2,1,9,-1,6,0,22};
-    quicksort(arr,0,arr.size()-1);
-    for(int i=0;i<arr.size();i++)
-    {
-        cout<<" "<<arr[i];
-    }
-    return 0;
-
+    std::swap(nums[i], nums[r]);
+    return {lt, i};
 }
 
-//using first element as pivot
-void QuickSort(int A[],int left,int right)
-{
-    int l=left,r=right;
-    int pivot;
-    if(left<right)
-    {
-        pivot=A[left];
-        while(l<r)
-        {
-            while(l<r&&A[r]>=pivot)
-                r--;
-            if(l<r)
-            {
-                A[l]=A[r];
-                l++;
-            }
-            while(l<r&&A[l]<pivot)
-                l++;
-            if(l<r)
-            {
-                A[r]=A[l];
-                r--;
-            }
-        }
-        A[l]=pivot;
-        QuickSort(A,left,l-1);
-        QuickSort(A,l+1,right);
+void quickSort(std::vector<int>& nums, int l, int r) {
+    if (l >= r) {
+        return;
     }
-}
-//partition
-void swap(int* a, int* b) 
-{ 
-    int t = *a; 
-    *a = *b; 
-    *b = t; 
-} 
-int partition(int arr[],int low,int high)
-{
-    int pivot=arr[high];
-    int l=low-1;
-    for(int i=low;i<=high-1;i++)
-    {
-        if(arr[i]<=pivot)
-        {
-            l++;
-            swap(&arr[l],&arr[i]);
-        }
-    }
-    swap(&arr[l+1],&arr[high]);
-    return (l+1);
-}
-void QuickSort(int arr[],int low,int high)
-{
-    if(low<high)
-    {
-        int m=partition(arr,low,high);
-        QuickSort(arr,low,m-1);
-        QuickSort(arr,m+1,high);
-    }
-
+    auto p = partition3(nums, l, r);
+    // +1， -1
+    quickSort(nums, l, p.first - 1);
+    quickSort(nums, p.second + 1, r); 
+    return;
 }
 
+int main () {
+    std::vector<int> vec = {1, 2, 3, 7, 9, 1, 4, 6, 9};
+    quickSort(vec, 0, vec.size() - 1);
+    for (auto each : vec) {
+        std::cout << each << ", ";
+    }
+}
