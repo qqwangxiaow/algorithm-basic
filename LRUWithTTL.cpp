@@ -23,11 +23,11 @@ public:
         auto now = std::chrono::steady_clock::now();
         if (it != _index.end()) {
             it->second->_value = value;
-            it->second->_ttl = ttl + now;
+            it->second->_expire_at = ttl + now;
             _data.splice(_data.begin(), _data, it->second);
             return;
         }
-        while (_data.size() >= _capacity && !_data.empty() && expire(std::prev(_data.end()), now)) {
+        while (!_data.empty() && expire(std::prev(_data.end()), now)) {
             erase_item(std::prev(_data.end()));
         }
         while (_data.size() >= _capacity) {
@@ -63,11 +63,12 @@ private:
     struct Node {
         K _key;
         V _value;
-        std::chrono::steady_clock::time_point _ttl;
-        Node(K key, V value, std::chrono::steady_clock::time_point ttl) : _key(key), _value(value), _ttl(ttl) {}
+        std::chrono::steady_clock::time_point _expire_at;
+        Node(K key, V value, std::chrono::steady_clock::time_point ttl) : _key(key), _value(value), _expire_at(ttl) {}
     };
+    // <= 
     bool expire(typename std::list<Node>::iterator it, std::chrono::steady_clock::time_point now) {
-        return it->_ttl <= now;
+        return it->_expire_at <= now;
     }
     void erase_item(typename std::list<Node>::iterator it) {
         _index.erase(it->_key);
@@ -83,19 +84,23 @@ private:
 };
 int main() {
     LRUCache<int, int> cache(2);
-
-    cache.put(1, 1, std::chrono::milliseconds(500));
-    cache.put(2, 2, std::chrono::seconds(1));
-    cache.put(3, 3, std::chrono::seconds(1));
+    auto a = std::chrono::milliseconds(10000);
+    cache.put(1, 1, a);
+    cache.put(2, 2, a);
+    cache.put(3, 3, a);
     int temp;
-    cache.get(1, &temp);
-    std::cout << temp << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    std::cout << cache.get(1, &temp) << std::endl;
-    cache.get(2, &temp);
-    std::cout << temp << std::endl;
-    cache.get(3, &temp);
-    std::cout << temp << std::endl;
+    if (cache.get(3, &temp)) {
+        std::cout << "result is :" << temp << std::endl;
+    } else {
+        std::cout << "not found" << std::endl;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    if (cache.get(3, &temp)) {
+        std::cout << "result is :" << temp << std::endl;
+    } else {
+        std::cout << "not found" << std::endl;
+    }
+
 
 
 }
