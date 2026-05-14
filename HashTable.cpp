@@ -1,83 +1,75 @@
 #include <vector>
-#include <cstddef>
+#include <list>
+#include <utility>
 #include <iostream>
 
 template<typename K, typename V>
 class HashTable {
 public:
-    explicit HashTable(int capacity) : _capacity(capacity) {
-        _hash_table.resize(_capacity, nullptr);
-    }
-    ~HashTable() {
-        for (auto node : _hash_table) {
-            while (node) {
-                Node* tmp = node;
-                node = node->_next;
-                delete tmp;
-            }
-        }
-    }
-
+    // 构造：默认桶大小
+    explicit HashTable(size_t bucket = 97) : _buckets(bucket) {}
+    ~HashTable() = default;
     HashTable(const HashTable& other) = delete;
     HashTable& operator=(const HashTable& other) = delete;
-    HashTable(HashTable&& other) noexcept = default;
-    HashTable& operator=(HashTable&& other) noexcept = default;
 
-    bool get(const K& key, V* value) {
-        size_t index = hash(key);
-        Node* node = _hash_table[index];
-        while(node) {
-            if (node->_key == key) {
-                *value = node->_value;
+    // 增 / 改
+    void put(const K& key, const V& val) {
+        size_t idx = hash(key) % _buckets.size();
+        auto& list = _buckets[idx];
+        
+        // 查找是否已存在
+        for (auto& p : list) {
+            if (p.first == key) {
+                p.second = val;
+                return;
+            }
+        }
+        // 不存在则插入
+        list.emplace_back(key, val);
+    }
+
+    bool get(const K& key, V* out_val) {
+        if (!out_val) return false;
+        size_t idx = hash(key) % _buckets.size();
+        auto& list = _buckets[idx];
+        
+        for (auto& p : list) {
+            if (p.first == key) {
+                *out_val = p.second;
                 return true;
             }
-            node = node->_next;
         }
         return false;
+
+    }
+
+    bool erase(const K& key) {
+        size_t idx = hash(key) % _buckets.size();
+        auto& list = _buckets[idx];
         
-    }
-
-    void insert(const K& key, const V& value) {
-        int index = hash(key);
-        if (_hash_table[index] == nullptr) {
-            _hash_table[index] = new Node(key, value, nullptr);
-        } else {
-            Node* node = _hash_table[index];
-            while (node) {
-                if (node->_key == key) {
-                    node->_value = value;
-                    return;
-                }
-                node = node->_next;
+        for (auto it = list.begin(); it != list.end(); ++it) {
+            if (it->first == key) {
+                list.erase(it);
+                return true;
             }
-            _hash_table[index] = new Node(key, value, _hash_table[index]);
         }
+        return false;
     }
-
-    size_t hash(const K& key) const  {
-        return std::hash<K>{}(key) % _capacity;
-    }
-
 
 private:
-    struct Node {
-        K _key;
-        V _value;
-        Node* _next = nullptr;
-        Node(K key, V value, Node* next) : _key(key), _value(value), _next(next){}    
-    };
-    std::vector<Node*> _hash_table;
-    size_t _capacity = 0;
+    size_t hash(const K& key) const {
+        return std::hash<K>{}(key);
+    }
+    std::vector<std::list<std::pair<K, V>>> _buckets;
 };
 
 int main() {
-	std::cout << "hello world" << std::endl;
-    HashTable<int, int> a(3);
-    a.insert(1, 1);
-    a.insert(2, 2);
-    a.insert(3, 3);
-    int b;
-    a.get(3, &b);
-    std::cout << "b: " << b << std::endl;
+    HashTable<int, int> table(11);
+    table.put(1, 1);
+    int temp;
+    if (table.get(1, &temp)) {
+        std::cout << "found value: " << temp;
+    } else {
+        std::cout << "not found";
+    }
 }
-	
