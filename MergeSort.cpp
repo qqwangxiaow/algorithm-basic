@@ -1,59 +1,49 @@
-#include<iostream>
-#include<vector>
-#include<unordered_map>
-#include<string>
-#include<bitset>
-#include<stack>
-#include<algorithm>
-#include<set>
-#include<unordered_set>
-#include<map>
-using namespace std;
-void merge(vector<int>&arr,int l,int m,int r,vector<int>temp)
-{
-    int i=l,j=m+1,k=0;
-    while(i<=m&&j<=r)
-    {
-        if(arr[i]<arr[j])
-        {
-            temp[k++]=arr[i++];
-        }
-        else
-        {
-            temp[k++]=arr[j++];
-        }
-    }
-    while(i<=m)
-        temp[k++]=arr[i++];
-    while(j<=r)
-        temp[k++]=arr[j++];
-    k=0;
-    while(l<=r)
-    {
-        arr[l++]=temp[k++];
-    }
-}
-void mergesort(vector<int>&arr,int l,int r,vector<int>temp)
-{
-    if(l<r)
-    {
-        int m=(l+r)>>1;
-        mergesort(arr,l,m,temp);
-        mergesort(arr,m+1,r,temp);
-        merge(arr,l,m,r,temp);
-    }
+#include <iostream>
+#include <vector>
 
+void mergeSort(std::vector<int>& nums, std::vector<int>& temp, int l, int r) {
+    if (l >= r) {
+        return;
+    }
+    int m = l + (r - l) / 2;
+    mergeSort(nums, temp, l , m);
+    mergeSort(nums, temp, m + 1, r);
+    // 优化, 避免拷贝
+    if (nums[m] <= nums[m + 1]) {
+        return;
+    }
+    int l_index = l;
+    int r_index = m + 1;
+    int i = l;
+    while(l_index <= m && r_index <= r) {
+        temp[i++] = nums[l_index] <= nums[r_index] ? nums[l_index++] : nums[r_index++];
+    }
+    while(l_index <= m) {
+        temp[i++] = nums[l_index++];
+    }
+    while(r_index <= r) {
+        temp[i++] = nums[r_index++];
+    }
+    
+    // need copy
+    for (i = l; i <=r; ++i) {
+        nums[i] = temp[i];
+    }
 }
-void MergeSort(vector<int>&arr)
-{
-    vector<int>temp(arr.size());
-    mergesort(arr,0,arr.size()-1,temp);
+
+void sort(std::vector<int>& nums) {
+    int n = nums.size();
+    if (n <= 1) {
+        return;
+    }
+    std::vector<int> temp(n);
+    mergeSort(nums, temp, 0, n - 1);
 }
 
 int main() {
-    vector<int>arr{2,1,9,-1,6,0,22};
-    MergeSort(arr);
-    for(int i=0;i<arr.size();i++)
-        cout<<arr[i]<<" ";
-
+    std::vector<int> temp {-1, 3, 1, 2, 5, 3};
+    sort(temp);
+    for (auto each : temp) {
+        std::cout << "each: " << each << std::endl;
+    }
 }
