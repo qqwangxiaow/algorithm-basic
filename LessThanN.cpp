@@ -6,44 +6,45 @@
 
 using namespace std;
 
-int findMaxNumber(vector<int>& nums, int n) {
-
-    string s = to_string(n);
+int lessN(std::vector<int>& nums, int n) {
     std::sort(nums.begin(), nums.end());
-
-    string maxLess;
-    int len = s.size();
-    for (int i = 0; i < len -1; ++i) {
-        maxLess += char(nums.back() + '0');
+    std::string s = std::to_string(n);
+    // s.size
+    int m = s.size();
+    std::string maxbest;
+    for (int i = 0; i < m - 1; ++i) {
+        maxbest += char(nums.back() + '0');
     }
-    string best = maxLess;
-    std::function<bool(int, bool, string)> dfs = [&] (int i, bool isLimit, string path) {
-        if (i == len) {
+    std::function<bool(int, bool, std::string)> dfs = [&] (int i, bool is_limit, std::string path) {
+        if (i == m) {
+            // 这里是 s
             if (path < s) {
-                best = path;
+                maxbest = path;
                 return true;
             }
             return false;
         }
-        
-        for (auto it = nums.rbegin(); it != nums.rend(); it++) {
-            int d = *it;
-            if (isLimit && d > s[i] - '0') {
+        for (auto iter = nums.rbegin(); iter != nums.rend(); ++iter) {
+            int d = *iter;
+            // is_limit
+            if (is_limit && (d > s[i] - '0')) {
                 continue;
             }
-            bool newLimit = isLimit && (d == s[i] - '0');
-            if(dfs(i + 1, newLimit, path + char(d + '0'))) {
+            // s和 nums 的关系别写错了
+            int up = is_limit ? s[i] - '0' : 9;
+            // 这里不用循环遍历 贪心就够了
+            if (dfs(i + 1, is_limit && d == up, path + char(d + '0'))) {
                 return true;
             }
-
-        }
+        };
         return false;
     };
-
-    dfs(0, false, "");
-    return stoi(best);
-
-};
+    dfs(0, true, "");
+    if (maxbest.empty()) {
+        return -1;
+    }
+    return std::stoi(maxbest);
+}
 
 int atMostNGivenDigitSet(vector<string>& digits, int n) {
     std::string s = to_string(n);
