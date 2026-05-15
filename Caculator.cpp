@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <numeric>
 
-int calculate(std::string s) {
+int calculate(const std::string& s) {
     std::function<long long(int&)> dfs = [&] (int& i) {
         // long long
         std::vector<long long> stk;
