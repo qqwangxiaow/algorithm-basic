@@ -3,6 +3,7 @@
 #include<list>
 #include<unordered_map>
 #include<cassert>
+#include<mutex>
 
 template<typename K, typename V>
 class LFUCache {
@@ -18,6 +19,7 @@ public:
         if (!value) {
             return false;
         }
+        std::lock_guard<std::mutex> lock(_mutex);
         auto it = _index.find(key);
         if (it != _index.end()) {
             *value = it->second->_value;
@@ -28,6 +30,7 @@ public:
     }
 
     void put(const K& key, const V& value) {
+        std::lock_guard<std::mutex> lock(_mutex);
         if (_capacity == 0) {
             return;
         }
@@ -39,13 +42,12 @@ public:
         }
         if (_index.size() >= _capacity) {
             auto freq_it = _freq_to_list.find(_min_freq);
-            if (freq_it != _freq_to_list.end() && !freq_it->second.empty()) {
-                K key = freq_it->second.back()._key;
-                _index.erase(key);
-                freq_it->second.pop_back();
-                if (freq_it->second.empty()) {
-                    _freq_to_list.erase(freq_it);
-                }
+            auto& items = freq_it->second;
+            K evict_key = items.back()._key;
+            items.pop_back();
+            _index.erase(evict_key);
+            if (items.empty()) {
+                _freq_to_list.erase(freq_it);
             }
         }
         _freq_to_list[1].emplace_front(Node(key, value, 1));
@@ -78,6 +80,7 @@ private:
             }
         }
     }
+    std::mutex _mutex;
     size_t _capacity;
     int _min_freq;
     std::unordered_map<K, typename std::list<Node>::iterator> _index;
